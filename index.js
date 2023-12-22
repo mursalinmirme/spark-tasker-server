@@ -12,7 +12,7 @@ app.get('', (req, res)  => {
 console.log(process.env.DB_NAME);
 console.log(process.env.DB_PASSWORD);
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASSWORD}@mursalin.bxh3q56.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -34,19 +34,39 @@ async function run() {
         const receive = req.body;
         console.log(receive);
         const result = await taskCollections.insertOne(receive)
-        res.send(result)
-        console.log(result);
+        res.send(result);
     })
     app.get('/my-todos', async(req, res) => {
         const email = req.query.email;
         console.log(email);
         const result = await taskCollections.find({taskUser: email}).toArray();
-        console.log('resp', result);
+        res.send(result)
+    })
+    app.get('/update-task/:id', async(req, res) => {
+        const updateId = req.params.id;
+        console.log('update id', updateId);
+        const result = await taskCollections.findOne({_id: new ObjectId(updateId)});
         res.send(result)
     })
 
-    
+    app.delete('/delete-task/:id', async(req, res) => {
+        const deleteId = req.params.id;
+        const result = await taskCollections.deleteOne({_id: new ObjectId(deleteId)});
+        res.send(result)
+    })
 
+    app.put('/update-task/:id', async(req, res) => {
+        const updateVersion = req.body;
+        const id = req.params.id;
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: updateVersion,
+        };
+        console.log('update versions is', updateVersion);
+        const result = await taskCollections.updateOne({_id: new ObjectId(id)}, updateDoc, options);
+        res.send(result);
+        console.log(result);
+    })
 
     client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
